@@ -49,6 +49,8 @@ export async function convertImage(file, targetExt, options = {}) {
         return;
       }
 
+      const quality = options.quality !== undefined ? Math.max(0.01, Math.min(1.0, Number(options.quality))) : 0.90;
+
       canvas.toBlob(
         (blob) => {
           if (!blob) {
@@ -63,7 +65,7 @@ export async function convertImage(file, targetExt, options = {}) {
           });
         },
         mimeType,
-        0.95
+        quality
       );
     };
 

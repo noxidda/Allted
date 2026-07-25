@@ -1,4 +1,4 @@
-export async function convertAudioVideo(file, targetExt) {
+export async function convertAudioVideo(file, targetExt, options = {}, onProgress) {
   const cleanTarget = targetExt.toLowerCase();
   const sourceExt = file.name.split('.').pop()?.toLowerCase() || '';
 
@@ -10,7 +10,7 @@ export async function convertAudioVideo(file, targetExt) {
     return convertToAudioFormat(file, cleanTarget);
   }
 
-  return convertMediaContainer(file, cleanTarget);
+  return convertMediaContainer(file, cleanTarget, options, onProgress);
 }
 
 async function convertSubtitles(file, targetExt) {
@@ -129,19 +129,148 @@ function audioBufferToWav(buffer) {
   return new Blob([outBuffer], { type: 'audio/wav' });
 }
 
-async function convertMediaContainer(file, targetExt) {
-  const arrayBuffer = await file.arrayBuffer();
+async function convertMediaContainer(file, targetExt, options = {}, onProgress) {
+  const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
   let mimeType = 'video/mp4';
   if (targetExt === 'webm') mimeType = 'video/webm';
   else if (targetExt === 'mkv') mimeType = 'video/x-matroska';
   else if (targetExt === 'avi') mimeType = 'video/x-msvideo';
   else if (targetExt === 'gif') mimeType = 'image/gif';
 
+  if (typeof document !== 'undefined' && typeof MediaRecorder !== 'undefined') {
+    try {
+      const processedBlob = await reencodeVideo(file, targetExt, options, onProgress);
+      if (processedBlob) {
+        return {
+          blob: processedBlob,
+          fileName: `${baseName}.${targetExt}`,
+          mimeType: processedBlob.type || mimeType,
+        };
+      }
+    } catch (err) {
+      console.warn('Video re-encoding error, falling back to direct container wrap:', err);
+    }
+  }
+
+  const arrayBuffer = await file.arrayBuffer();
   const blob = new Blob([arrayBuffer], { type: mimeType });
-  const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
   return {
     blob,
     fileName: `${baseName}.${targetExt}`,
     mimeType,
   };
+}
+
+function reencodeVideo(file, targetExt, options = {}, onProgress) {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    const url = URL.createObjectURL(file);
+    video.src = url;
+    video.muted = true;
+    video.playsInline = true;
+
+    video.onloadedmetadata = async () => {
+      try {
+        const srcWidth = video.videoWidth || 1280;
+        const srcHeight = video.videoHeight || 720;
+        const targetWidth = options.width ? parseInt(options.width, 10) : srcWidth;
+        const targetHeight = options.height ? parseInt(options.height, 10) : srcHeight;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+          URL.revokeObjectURL(url);
+          return resolve(null);
+        }
+
+        const totalPixels = targetWidth * targetHeight;
+        let videoBitsPerSecond = Math.max(400000, Math.min(30000000, Math.round(totalPixels * 2.5)));
+
+        let recMime = 'video/webm;codecs=vp9';
+        if (!MediaRecorder.isTypeSupported(recMime)) recMime = 'video/webm;codecs=vp8';
+        if (!MediaRecorder.isTypeSupported(recMime)) recMime = 'video/webm';
+        if (!MediaRecorder.isTypeSupported(recMime)) recMime = 'video/mp4';
+
+        const canvasStream = canvas.captureStream(30);
+
+        try {
+          if (typeof video.captureStream === 'function') {
+            const videoStream = video.captureStream();
+            videoStream.getAudioTracks().forEach((track) => canvasStream.addTrack(track));
+          } else if (typeof video.mozCaptureStream === 'function') {
+            const videoStream = video.mozCaptureStream();
+            videoStream.getAudioTracks().forEach((track) => canvasStream.addTrack(track));
+          }
+        } catch (e) {
+          // Audio track extraction optional
+        }
+
+        const recorderOptions = { videoBitsPerSecond };
+        if (MediaRecorder.isTypeSupported(recMime)) {
+          recorderOptions.mimeType = recMime;
+        }
+
+        const mediaRecorder = new MediaRecorder(canvasStream, recorderOptions);
+        const chunks = [];
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) chunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          URL.revokeObjectURL(url);
+          const finalMime = recorderOptions.mimeType || 'video/webm';
+          const blob = new Blob(chunks, { type: finalMime });
+          resolve(blob);
+        };
+
+        mediaRecorder.onerror = (err) => {
+          URL.revokeObjectURL(url);
+          reject(err);
+        };
+
+        mediaRecorder.start(100);
+        await video.play();
+
+        let animId;
+        const renderFrame = () => {
+          if (video.paused || video.ended) return;
+          ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+          if (onProgress && video.duration) {
+            const pct = Math.min(95, Math.round((video.currentTime / video.duration) * 100));
+            onProgress(pct);
+          }
+          animId = requestAnimationFrame(renderFrame);
+        };
+
+        renderFrame();
+
+        video.onended = () => {
+          cancelAnimationFrame(animId);
+          if (mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+          }
+        };
+
+        const durationMs = (video.duration || 10) * 1000 + 2000;
+        setTimeout(() => {
+          cancelAnimationFrame(animId);
+          if (mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+          }
+        }, durationMs);
+      } catch (err) {
+        URL.revokeObjectURL(url);
+        reject(err);
+      }
+    };
+
+    video.onerror = (err) => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+  });
 }

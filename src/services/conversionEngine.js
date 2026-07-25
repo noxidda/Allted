@@ -31,7 +31,7 @@ export async function processConversion(file, targetExt, category, onProgress, o
     } else if (categoryToUse === 'spreadsheet' || ['json', 'csv', 'tsv', 'xml', 'yaml', 'yml', 'toml', 'ini'].includes(targetClean)) {
       result = await convertData(file, targetClean, options);
     } else if (categoryToUse === 'audio' || categoryToUse === 'video' || ['mp3', 'wav', 'flac', 'aac', 'm4a', 'ogg', 'opus', 'mp4', 'mkv', 'mov', 'avi', 'webm', 'srt', 'vtt', 'ass', 'ssa'].includes(targetClean)) {
-      result = await convertAudioVideo(file, targetClean, options);
+      result = await convertAudioVideo(file, targetClean, options, onProgress);
     } else if (categoryToUse === 'archive' || ['zip', '7z', 'tar', 'tar.gz', 'tar.xz', 'rar', 'gz'].includes(targetClean)) {
       result = await convertArchive(file, targetClean, options);
     } else if (categoryToUse === 'model3d' || ['obj', 'stl', 'fbx', 'gltf', 'glb', 'ply', 'dwg', 'dxf'].includes(targetClean)) {

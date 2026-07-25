@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { getCompatibleTargetFormats, FORMAT_OPTIONS, CATEGORY_ACCEPT_MAP } from '../constants/matrix';
+import { exportFileWithPicker } from '../utils/fileSaver';
 
 const VIDEO_PRESETS = [
   { key: '8K', w: 7680, h: 4320 },
@@ -10,29 +11,18 @@ const VIDEO_PRESETS = [
   { key: 'SD', w: 854, h: 480 },
 ];
 
-const PHOTO_RATIO_PRESETS = [
-  { key: '3:4', wRatio: 3, hRatio: 4 },
-  { key: '4:5', wRatio: 4, hRatio: 5 },
-  { key: '2:3', wRatio: 2, hRatio: 3 },
-  { key: '1:1', wRatio: 1, hRatio: 1 },
-  { key: '16:9', wRatio: 16, hRatio: 9 },
-  { key: '9:16', wRatio: 9, hRatio: 16 },
-  { key: '3:2', wRatio: 3, hRatio: 2 },
-  { key: '4:3', wRatio: 4, hRatio: 3 },
-  { key: '5:4', wRatio: 5, hRatio: 4 },
-];
-
 export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conversionProgress, convertedResult, onPreviewResult, onReset }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [targetFormat, setTargetFormat] = useState('');
   
-  // Media Resolution States
+  // Media Resolution & Quality States
   const [nativeDimensions, setNativeDimensions] = useState({ width: 0, height: 0 });
   const [customWidth, setCustomWidth] = useState('');
   const [customHeight, setCustomHeight] = useState('');
   const [lockAspect, setLockAspect] = useState(true);
   const [activePreset, setActivePreset] = useState(null);
+  const [imageQuality, setImageQuality] = useState(90);
 
   const fileInputRef = useRef(null);
 
@@ -151,43 +141,24 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
     setCustomHeight(String(targetH));
   };
 
-  const handlePhotoRatioSelect = (presetKey, wRatio, hRatio) => {
-    setActivePreset(presetKey);
-    const maxW = nativeDimensions.width || 1920;
-    const maxH = nativeDimensions.height || 1080;
-
-    const targetRatio = wRatio / hRatio;
-    let calculatedW = maxW;
-    let calculatedH = Math.round(calculatedW / targetRatio);
-
-    if (calculatedH > maxH) {
-      calculatedH = maxH;
-      calculatedW = Math.round(calculatedH * targetRatio);
-    }
-
-    setCustomWidth(String(calculatedW));
-    setCustomHeight(String(calculatedH));
-  };
-
   const handleStartConversion = () => {
     if (selectedFile && targetFormat) {
-      onConvertFile(selectedFile, targetFormat, {
-        width: customWidth ? parseInt(customWidth, 10) : undefined,
-        height: customHeight ? parseInt(customHeight, 10) : undefined,
-      });
+      if (isImageFile) {
+        onConvertFile(selectedFile, targetFormat, {
+          quality: imageQuality / 100,
+        });
+      } else {
+        onConvertFile(selectedFile, targetFormat, {
+          width: customWidth ? parseInt(customWidth, 10) : undefined,
+          height: customHeight ? parseInt(customHeight, 10) : undefined,
+        });
+      }
     }
   };
 
-  const handleDownloadResult = () => {
+  const handleDownloadResult = async () => {
     if (!convertedResult?.blob || !convertedResult?.fileName) return;
-    const url = URL.createObjectURL(convertedResult.blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = convertedResult.fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    await exportFileWithPicker(convertedResult.blob, convertedResult.fileName);
   };
 
   const handleClearSelection = () => {
@@ -212,8 +183,6 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
     selectedFile.type.includes('image') ||
     ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'gif', 'svg', 'heic', 'avif'].includes(sourceExt)
   );
-
-  const isMediaFile = isVideoFile || isImageFile;
 
   const acceptTypes = CATEGORY_ACCEPT_MAP[activeCategory] || '*/*';
 
@@ -307,7 +276,7 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
               </div>
             )}
 
-            {/* Video Resolution Presets (For Video Files) */}
+            {/* Video Resolution Presets (For Video Files Only) */}
             {isVideoFile && !convertedResult && (
               <div className="p-3 input-3d-recessed rounded-xl shrink-0 space-y-2 font-normal">
                 <div className="flex items-center justify-between text-[11px] text-[#dddddd] uppercase tracking-wider">
@@ -362,7 +331,7 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
                   </div>
                 </div>
 
-                {/* Proportional Lock Tick Mark Control */}
+                {/* Proportional Lock Control */}
                 <div className="pt-1 flex justify-between items-center text-white font-normal">
                   <button
                     onClick={() => setLockAspect(!lockAspect)}
@@ -386,81 +355,56 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
               </div>
             )}
 
-            {/* Photo Aspect Ratio Presets (For Image Files) */}
+            {/* Image Quality Control Slider (For Image Files Only) */}
             {isImageFile && !convertedResult && (
-              <div className="p-3 input-3d-recessed rounded-xl shrink-0 space-y-2 font-normal">
+              <div className="p-3 input-3d-recessed rounded-xl shrink-0 space-y-3 font-normal">
                 <div className="flex items-center justify-between text-[11px] text-[#dddddd] uppercase tracking-wider">
-                  <span>PHOTO PROPORTION PRESETS</span>
-                  <div className="flex flex-wrap gap-1 text-[10px]">
-                    {PHOTO_RATIO_PRESETS.map((p) => {
-                      const isSelected = activePreset === p.key;
-                      return (
-                        <button
-                          key={p.key}
-                          onClick={() => handlePhotoRatioSelect(p.key, p.wRatio, p.hRatio)}
-                          className={`px-1.5 py-0.5 rounded font-normal transition-colors ${
-                            isSelected
-                              ? 'bg-white text-black font-normal'
-                              : 'bg-[#1a1a1a] text-[#dddddd] hover:text-white'
-                          }`}
-                        >
-                          {p.key}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 items-end">
-                  <div>
-                    <label className="block text-[10px] text-[#dddddd] mb-1 font-normal">
-                      WIDTH (MAX {nativeDimensions.width || 7680} PX)
-                    </label>
-                    <input
-                      type="number"
-                      max={nativeDimensions.width || 7680}
-                      value={customWidth}
-                      onChange={(e) => handleWidthChange(e.target.value)}
-                      disabled={isConverting}
-                      className="w-full px-2.5 py-1 bg-[#141414] border border-white/20 text-xs font-mono text-white rounded focus:outline-none focus:border-white font-normal"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] text-[#dddddd] mb-1 font-normal">
-                      HEIGHT (MAX {nativeDimensions.height || 4320} PX)
-                    </label>
-                    <input
-                      type="number"
-                      max={nativeDimensions.height || 4320}
-                      value={customHeight}
-                      onChange={(e) => handleHeightChange(e.target.value)}
-                      disabled={isConverting}
-                      className="w-full px-2.5 py-1 bg-[#141414] border border-white/20 text-xs font-mono text-white rounded focus:outline-none focus:border-white font-normal"
-                    />
-                  </div>
-                </div>
-
-                {/* Proportional Lock Tick Mark Control */}
-                <div className="pt-1 flex justify-between items-center text-white font-normal">
-                  <button
-                    onClick={() => setLockAspect(!lockAspect)}
-                    disabled={isConverting}
-                    className="flex items-center gap-2 text-xs text-[#dddddd] hover:text-white font-normal transition-colors"
-                  >
-                    <span className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] transition-colors ${
-                      lockAspect
-                        ? 'bg-white text-black border-white'
-                        : 'bg-[#141414] text-transparent border-white/30'
-                    }`}>
-                      ✓
-                    </span>
-                    <span>Proportional Lock</span>
-                  </button>
-
-                  <span className="text-[10px] text-[#dddddd] font-normal">
-                    MAX: {nativeDimensions.width}x{nativeDimensions.height}
+                  <span>IMAGE QUALITY</span>
+                  <span className="text-xs font-mono font-bold text-white bg-[#1a1a1a] px-2.5 py-0.5 rounded border border-white/20">
+                    {imageQuality}%
                   </span>
+                </div>
+
+                <div className="space-y-2">
+                  <input
+                    type="range"
+                    min="1"
+                    max="100"
+                    value={imageQuality}
+                    onChange={(e) => setImageQuality(Number(e.target.value))}
+                    disabled={isConverting}
+                    className="w-full h-1.5 bg-[#141414] rounded-lg appearance-none cursor-pointer accent-white border border-white/20"
+                  />
+                  <div className="flex justify-between text-[10px] text-[#dddddd]">
+                    <button
+                      onClick={() => setImageQuality(50)}
+                      disabled={isConverting}
+                      className="hover:text-white transition-colors"
+                    >
+                      50%
+                    </button>
+                    <button
+                      onClick={() => setImageQuality(75)}
+                      disabled={isConverting}
+                      className="hover:text-white transition-colors"
+                    >
+                      75%
+                    </button>
+                    <button
+                      onClick={() => setImageQuality(90)}
+                      disabled={isConverting}
+                      className="hover:text-white transition-colors font-semibold text-white"
+                    >
+                      90% (Recommended)
+                    </button>
+                    <button
+                      onClick={() => setImageQuality(100)}
+                      disabled={isConverting}
+                      className="hover:text-white transition-colors"
+                    >
+                      100% (Max)
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -510,7 +454,7 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
         )}
       </div>
 
-      {/* Footer Action Trigger - Smaller & Left Aligned */}
+      {/* Footer Action Trigger */}
       <div className="pt-2.5 border-t border-white/10 shrink-0 font-normal flex justify-start">
         {!convertedResult ? (
           <button

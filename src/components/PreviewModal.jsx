@@ -56,9 +56,9 @@ export const PreviewModal = ({ item, onClose }) => {
 
           <button
             onClick={onClose}
-            className="btn-3d-secondary text-xs px-3 py-1"
+            className="btn-3d-secondary text-xs px-3 py-1 font-semibold"
           >
-            CLOSE X
+            X
           </button>
         </div>
 
@@ -110,15 +110,6 @@ export const PreviewModal = ({ item, onClose }) => {
         {/* Footer */}
         <div className="flex items-center justify-between p-4 border-t border-white/10">
           <span className="text-xs text-[#888888]">FORMAT: {item.toExt.toUpperCase()}</span>
-
-          <div className="flex items-center gap-3">
-            <button onClick={onClose} className="btn-3d-secondary text-xs px-4 py-2">
-              CLOSE
-            </button>
-            <button onClick={handleDownload} className="btn-3d-primary text-xs px-6 py-2">
-              SAVE FILE
-            </button>
-          </div>
         </div>
       </div>
     </div>

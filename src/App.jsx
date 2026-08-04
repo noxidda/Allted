@@ -66,9 +66,9 @@ export const App = () => {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#000000] text-[#ffffff] font-sans overflow-hidden select-none">
-      {/* Main Workspace - 100% Screen Viewport Height & Width */}
-      <div className="flex-1 flex overflow-hidden">
+    <div className="min-h-screen w-screen flex flex-col bg-[#000000] text-[#ffffff] font-sans overflow-x-hidden lg:overflow-hidden select-none">
+      {/* Main Workspace */}
+      <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
         {/* Left Section Sidebar */}
         <SectionSidebar
           activeCategory={activeCategory}
@@ -76,9 +76,9 @@ export const App = () => {
         />
 
         {/* Central & Right Split Workspace Pane */}
-        <main className="flex-1 flex overflow-hidden p-4 gap-4 bg-[#0d0d0d]">
+        <main className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden p-2 sm:p-4 gap-3 sm:gap-4 bg-[#0d0d0d]">
           {/* Left 75% Space Single File Converter Workspace */}
-          <div className="w-[75%] h-full shrink-0 overflow-hidden">
+          <div className="w-full lg:w-[75%] h-auto lg:h-full shrink-0 overflow-visible lg:overflow-hidden">
             <DropzoneArea
               onConvertFile={handleConvertFile}
               activeCategory={activeCategory}
@@ -95,7 +95,7 @@ export const App = () => {
           </div>
 
           {/* Right 25% Space Conversion History Panel */}
-          <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+          <div className="w-full lg:w-[25%] flex-1 flex flex-col h-auto lg:h-full overflow-hidden min-w-0">
             <HistoryPanel
               history={history}
             />

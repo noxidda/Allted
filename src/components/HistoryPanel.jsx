@@ -2,16 +2,16 @@ import React from 'react';
 
 export const HistoryPanel = ({ history }) => {
   return (
-    <div className="panel-3d w-full h-full p-4 rounded-xl flex flex-col justify-between select-none font-normal">
+    <div className="panel-3d w-full h-full p-3 sm:p-4 rounded-xl flex flex-col justify-between select-none font-normal min-h-[140px] lg:min-h-0">
       {/* Header */}
-      <div className="pb-2.5 border-b border-white/10 text-xs font-normal uppercase tracking-wider text-[#dddddd] shrink-0">
+      <div className="pb-2 border-b border-white/10 text-xs font-normal uppercase tracking-wider text-[#dddddd] shrink-0">
         HISTORY
       </div>
 
-      {/* History Items Log - Only File Name and Conversion Pair */}
-      <div className="flex-1 overflow-y-auto my-2 space-y-2 pr-1 font-normal">
+      {/* History Items Log */}
+      <div className="flex-1 overflow-y-auto my-2 space-y-2 pr-1 font-normal max-h-[180px] lg:max-h-none">
         {history.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-center p-4 text-xs text-[#dddddd]">
+          <div className="h-full min-h-[80px] flex items-center justify-center text-center p-4 text-xs text-[#dddddd]">
             No history yet
           </div>
         ) : (

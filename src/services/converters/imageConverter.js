@@ -1,3 +1,5 @@
+import { createPdfFromImage } from '../../utils/pdfGenerator';
+
 export async function convertImage(file, targetExt, options = {}) {
   const cleanTarget = targetExt.toLowerCase();
 
@@ -98,14 +100,11 @@ async function convertImageToPdf(file, options = {}) {
         ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
       }
 
-      const imgData = canvas.toDataURL('image/jpeg', 0.9);
-      const pdfHeader = `%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${targetWidth} ${targetHeight}] /Contents 4 0 R /Resources << /XObject << /Im1 5 0 R >> >> >>\nendobj\n4 0 obj\n<< /Length 55 >>\nstream\nq\n${targetWidth} 0 0 ${targetHeight} 0 0 cm\n/Im1 Do\nQ\nendstream\nendobj\n5 0 obj\n<< /Type /XObject /Subtype /Image /Width ${targetWidth} /Height ${targetHeight} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imgData.length} >>\nstream\n`;
-      const pdfFooter = `\nendstream\nendobj\nxref\n0 6\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \n0000000244 00000 n \n0000000350 00000 n \ntrailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n500\n%%EOF`;
-
-      const blob = new Blob([pdfHeader, imgData, pdfFooter], { type: 'application/pdf' });
+      const pdfBlob = createPdfFromImage(canvas);
       const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+
       resolve({
-        blob,
+        blob: pdfBlob,
         fileName: `${baseName}.pdf`,
         mimeType: 'application/pdf',
       });

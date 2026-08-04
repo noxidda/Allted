@@ -1,3 +1,5 @@
+import { createPdfFromText } from '../../utils/pdfGenerator';
+
 export async function convertDocument(file, targetExt) {
   const cleanTarget = targetExt.toLowerCase();
   const sourceExt = file.name.split('.').pop()?.toLowerCase() || '';
@@ -25,18 +27,18 @@ export async function convertDocument(file, targetExt) {
     outputBlob = new Blob([mdOutput], { type: 'text/markdown;charset=utf-8' });
     mimeType = 'text/markdown';
   } else if (cleanTarget === 'rtf') {
-    const rtfOutput = `{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Arial;}}\\f0\\fs24 ${stripMarkup(contentText).replace(/\n/g, '\\par\n')}}`;
+    const rtfOutput = `{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Arial;}}\\f0\\fs24 ${pdfEscapeRtf(stripMarkup(contentText)).replace(/\n/g, '\\par\n')}}`;
     outputBlob = new Blob([rtfOutput], { type: 'application/rtf;charset=utf-8' });
     mimeType = 'application/rtf';
   } else if (cleanTarget === 'pdf') {
-    outputBlob = await renderToPdfBlob(contentText, sourceExt, file.name);
+    outputBlob = createPdfFromText(file.name, stripMarkup(contentText));
     mimeType = 'application/pdf';
   } else if (cleanTarget === 'docx' || cleanTarget === 'doc' || cleanTarget === 'odt' || cleanTarget === 'epub') {
-    const docHtml = formatToHTML(contentText, sourceExt);
-    outputBlob = new Blob([docHtml], { type: 'application/msword;charset=utf-8' });
-    mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    const wordHtml = formatToWordHTML(contentText, sourceExt, file.name);
+    outputBlob = new Blob([wordHtml], { type: 'application/msword;charset=utf-8' });
+    mimeType = 'application/msword';
   } else {
-    outputBlob = new Blob([contentText], { type: 'text/plain;charset=utf-8' });
+    outputBlob = new Blob([stripMarkup(contentText)], { type: 'text/plain;charset=utf-8' });
   }
 
   const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
@@ -54,7 +56,8 @@ async function readBinaryDocText(file) {
     const raw = decoder.decode(arrayBuffer);
     const textMatches = raw.match(/[\x20-\x7E\s]{4,}/g);
     if (textMatches && textMatches.length > 0) {
-      return textMatches.filter(t => !t.startsWith('PK') && !t.startsWith('<<')).join('\n');
+      const filtered = textMatches.filter(t => !t.startsWith('PK') && !t.startsWith('<<') && t.trim().length > 3);
+      if (filtered.length > 0) return filtered.join('\n');
     }
     return `Document content extracted from ${file.name}\nSize: ${file.size} bytes.`;
   } catch {
@@ -63,11 +66,49 @@ async function readBinaryDocText(file) {
 }
 
 function stripMarkup(text) {
+  if (!text) return '';
   return text
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
     .replace(/<[^>]*>/g, '')
     .replace(/#+\s/g, '')
     .replace(/\[(.*?)\]\(.*?\)/g, '$1')
     .replace(/\\(section|title|author|paragraph)\{(.*?)\}/g, '$2');
+}
+
+function pdfEscapeRtf(text) {
+  return String(text)
+    .replace(/\\/g, '\\\\')
+    .replace(/\{/g, '\\{')
+    .replace(/\}/g, '\\}');
+}
+
+function formatToWordHTML(text, sourceExt, fileName) {
+  const bodyContent = formatToHTML(text, sourceExt);
+  return `<html xmlns:o='urn:schemas-microsoft-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+  <meta charset='utf-8'>
+  <title>${fileName}</title>
+  <!--[if gte mso 9]>
+  <xml>
+    <w:WordDocument>
+      <w:View>Normal</w:View>
+      <w:Zoom>100</w:Zoom>
+      <w:DoNotOptimizeForBrowser/>
+    </w:WordDocument>
+  </xml>
+  <![endif]-->
+  <style>
+    body { font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.5; padding: 20pt; color: #000000; }
+    h1 { font-size: 20pt; color: #1f4e78; margin-bottom: 10pt; }
+    h2 { font-size: 14pt; color: #2e75b6; margin-top: 12pt; margin-bottom: 6pt; }
+    p { margin-bottom: 8pt; }
+  </style>
+</head>
+<body>
+  ${bodyContent}
+</body>
+</html>`;
 }
 
 function formatToHTML(text, sourceExt) {
@@ -120,48 +161,4 @@ function formatToMarkdown(text, sourceExt) {
       .replace(/<[^>]*>/g, '');
   }
   return md;
-}
-
-async function renderToPdfBlob(text, sourceExt, originalName) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1240;
-  canvas.height = 1754;
-  const ctx = canvas.getContext('2d');
-
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.fillStyle = '#007acc';
-  ctx.font = 'bold 36px Segoe UI, sans-serif';
-  ctx.fillText(`Allted Converted Document - ${originalName}`, 80, 100);
-
-  ctx.fillStyle = '#121212';
-  ctx.font = '24px Segoe UI, sans-serif';
-  
-  const lines = stripMarkup(text).split('\n');
-  let y = 160;
-  for (const line of lines) {
-    if (y > canvas.height - 100) break;
-    const words = line.split(' ');
-    let currentLine = '';
-    for (const word of words) {
-      const testLine = currentLine + word + ' ';
-      const metrics = ctx.measureText(testLine);
-      if (metrics.width > canvas.width - 160 && currentLine !== '') {
-        ctx.fillText(currentLine, 80, y);
-        currentLine = word + ' ';
-        y += 36;
-      } else {
-        currentLine = testLine;
-      }
-    }
-    ctx.fillText(currentLine, 80, y);
-    y += 36;
-  }
-
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => {
-      resolve(blob || new Blob([text], { type: 'application/pdf' }));
-    }, 'application/pdf');
-  });
 }

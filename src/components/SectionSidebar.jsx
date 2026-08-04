@@ -1,12 +1,14 @@
 import React from 'react';
 import { CATEGORIES } from '../constants/matrix';
+import logoImg from '../assets/logo/logo.png';
 
 export const SectionSidebar = ({ activeCategory, onSelectCategory }) => {
   return (
     <aside className="w-full lg:w-52 bg-gradient-to-b from-[#1c1c1c] to-[#121212] border-b lg:border-b-0 lg:border-r border-[#0a0a0a] shadow-[0_4px_12px_rgba(0,0,0,0.5)] lg:shadow-[4px_0_12px_rgba(0,0,0,0.5)] flex flex-col shrink-0 select-none font-normal">
-      {/* Sidebar Header - Desktop */}
-      <div className="hidden lg:block p-3 border-b border-white/10 text-xs font-normal text-[#dddddd] uppercase tracking-wider shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
-        SECTIONS
+      {/* App Branding & Logo Header */}
+      <div className="flex items-center gap-2.5 p-3 border-b border-white/10 text-xs font-normal text-[#dddddd] uppercase tracking-wider shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
+        <img src={logoImg} alt="Allted App Icon" className="w-6 h-6 object-contain rounded shrink-0" />
+        <span className="font-semibold text-white tracking-wider text-xs">ALLTED</span>
       </div>
 
       {/* Category List - Horizontal scroll on mobile, vertical stack on desktop */}

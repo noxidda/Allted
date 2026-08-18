@@ -1,44 +1,39 @@
-import { createPdfFromText } from '../../utils/pdfGenerator';
+import { createPdfFromText } from '../../utils/pdfGenerator.js';
+import { extractTextFromDocx, extractTextFromOdt, extractTextFromEpub } from '../../utils/zipReader.js';
 
 export async function convertDocument(file, targetExt) {
   const cleanTarget = targetExt.toLowerCase();
   const sourceExt = file.name.split('.').pop()?.toLowerCase() || '';
 
-  let contentText = '';
-
-  if (sourceExt === 'txt' || sourceExt === 'md' || sourceExt === 'html' || sourceExt === 'rtf' || sourceExt === 'tex') {
-    contentText = await file.text();
-  } else {
-    contentText = await readBinaryDocText(file, sourceExt);
-  }
+  const contentText = await extractDocumentText(file, sourceExt);
 
   let outputBlob;
   let mimeType = 'text/plain';
 
   if (cleanTarget === 'txt') {
-    outputBlob = new Blob([stripMarkup(contentText)], { type: 'text/plain;charset=utf-8' });
+    outputBlob = new Blob([contentText], { type: 'text/plain;charset=utf-8' });
     mimeType = 'text/plain';
   } else if (cleanTarget === 'html') {
-    const htmlOutput = formatToHTML(contentText, sourceExt);
+    const htmlOutput = formatToHTML(contentText, sourceExt, file.name);
     outputBlob = new Blob([htmlOutput], { type: 'text/html;charset=utf-8' });
     mimeType = 'text/html';
   } else if (cleanTarget === 'md') {
-    const mdOutput = formatToMarkdown(contentText, sourceExt);
+    const mdOutput = formatToMarkdown(contentText);
     outputBlob = new Blob([mdOutput], { type: 'text/markdown;charset=utf-8' });
     mimeType = 'text/markdown';
   } else if (cleanTarget === 'rtf') {
-    const rtfOutput = `{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Arial;}}\\f0\\fs24 ${pdfEscapeRtf(stripMarkup(contentText)).replace(/\n/g, '\\par\n')}}`;
+    const rtfOutput = formatToRtf(contentText);
     outputBlob = new Blob([rtfOutput], { type: 'application/rtf;charset=utf-8' });
     mimeType = 'application/rtf';
   } else if (cleanTarget === 'pdf') {
-    outputBlob = createPdfFromText(file.name, stripMarkup(contentText));
+    outputBlob = createPdfFromText(file.name, contentText);
     mimeType = 'application/pdf';
   } else if (cleanTarget === 'docx' || cleanTarget === 'doc' || cleanTarget === 'odt' || cleanTarget === 'epub') {
     const wordHtml = formatToWordHTML(contentText, sourceExt, file.name);
     outputBlob = new Blob([wordHtml], { type: 'application/msword;charset=utf-8' });
     mimeType = 'application/msword';
   } else {
-    outputBlob = new Blob([stripMarkup(contentText)], { type: 'text/plain;charset=utf-8' });
+    outputBlob = new Blob([contentText], { type: 'text/plain;charset=utf-8' });
   }
 
   const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
@@ -49,46 +44,108 @@ export async function convertDocument(file, targetExt) {
   };
 }
 
-async function readBinaryDocText(file) {
+async function extractDocumentText(file, sourceExt) {
   try {
     const arrayBuffer = await file.arrayBuffer();
-    const decoder = new TextDecoder('utf-8');
-    const raw = decoder.decode(arrayBuffer);
-    const textMatches = raw.match(/[\x20-\x7E\s]{4,}/g);
-    if (textMatches && textMatches.length > 0) {
-      const filtered = textMatches.filter(t => !t.startsWith('PK') && !t.startsWith('<<') && t.trim().length > 3);
-      if (filtered.length > 0) return filtered.join('\n');
+
+    if (sourceExt === 'docx') {
+      const docxText = await extractTextFromDocx(arrayBuffer);
+      if (docxText && docxText.trim().length > 0) return docxText;
+    } else if (sourceExt === 'odt') {
+      const odtText = await extractTextFromOdt(arrayBuffer);
+      if (odtText && odtText.trim().length > 0) return odtText;
+    } else if (sourceExt === 'epub') {
+      const epubText = await extractTextFromEpub(arrayBuffer);
+      if (epubText && epubText.trim().length > 0) return epubText;
+    } else if (sourceExt === 'rtf') {
+      const rawRtf = new TextDecoder('utf-8').decode(arrayBuffer);
+      return parseRtfToText(rawRtf);
+    } else if (sourceExt === 'html' || sourceExt === 'htm') {
+      const rawHtml = new TextDecoder('utf-8').decode(arrayBuffer);
+      return parseHtmlToText(rawHtml);
+    } else if (sourceExt === 'pdf') {
+      return parsePdfToText(arrayBuffer, file.name);
     }
-    return `Document content extracted from ${file.name}\nSize: ${file.size} bytes.`;
-  } catch {
-    return `Extracted document text from ${file.name}`;
+
+    // Default for TXT, MD, TEX, and fallback text reading
+    const text = new TextDecoder('utf-8').decode(arrayBuffer);
+    if (text && !text.includes('\x00')) {
+      return stripBinaryJunk(text);
+    }
+
+    return `Extracted Document Text from ${file.name}`;
+  } catch (err) {
+    console.warn('Text extraction error:', err);
+    return `Content of ${file.name}`;
   }
 }
 
-function stripMarkup(text) {
-  if (!text) return '';
-  return text
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<[^>]*>/g, '')
-    .replace(/#+\s/g, '')
-    .replace(/\[(.*?)\]\(.*?\)/g, '$1')
-    .replace(/\\(section|title|author|paragraph)\{(.*?)\}/g, '$2');
+function parseRtfToText(rtfStr) {
+  return rtfStr
+    .replace(/\\fonttbl[\s\S]*?\}/gi, '')
+    .replace(/\\colortbl[\s\S]*?\}/gi, '')
+    .replace(/\\stylesheet[\s\S]*?\}/gi, '')
+    .replace(/\\par/gi, '\n')
+    .replace(/\\line/gi, '\n')
+    .replace(/\\[a-z]+\d*/gi, '')
+    .replace(/[\{\}]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
-function pdfEscapeRtf(text) {
-  return String(text)
-    .replace(/\\/g, '\\\\')
-    .replace(/\{/g, '\\{')
-    .replace(/\}/g, '\\}');
+function parseHtmlToText(htmlStr) {
+  return htmlStr
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<\/h[1-6]>/gi, '\n\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .trim();
+}
+
+function parsePdfToText(arrayBuffer, fileName) {
+  const decoder = new TextDecoder('utf-8');
+  const raw = decoder.decode(arrayBuffer);
+
+  const matches = raw.match(/\((.*?)\)\s*Tj/g);
+  if (matches && matches.length > 0) {
+    const extracted = matches
+      .map(m => m.replace(/^\(/, '').replace(/\)\s*Tj$/, '').replace(/\\/g, ''))
+      .filter(t => t.trim().length > 1);
+    if (extracted.length > 0) return extracted.join('\n');
+  }
+
+  const wordMatches = raw.match(/[\x20-\x7E]{4,}/g);
+  if (wordMatches) {
+    const cleanWords = wordMatches.filter(
+      w => !w.startsWith('/') && !w.startsWith('%') && !w.includes('obj') && !w.includes('endobj') && !w.includes('stream') && !w.includes('xref')
+    );
+    if (cleanWords.length > 0) return cleanWords.join('\n');
+  }
+
+  return `Extracted Document Content from ${fileName}`;
+}
+
+function stripBinaryJunk(text) {
+  return text
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function formatToWordHTML(text, sourceExt, fileName) {
-  const bodyContent = formatToHTML(text, sourceExt);
+  const paragraphs = text.split('\n').map(p => p.trim()).filter(Boolean);
+  const bodyContent = paragraphs.map(p => `<p>${escapeHtml(p)}</p>`).join('\n');
+
   return `<html xmlns:o='urn:schemas-microsoft-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
 <head>
   <meta charset='utf-8'>
-  <title>${fileName}</title>
+  <title>${escapeHtml(fileName)}</title>
   <!--[if gte mso 9]>
   <xml>
     <w:WordDocument>
@@ -99,66 +156,59 @@ function formatToWordHTML(text, sourceExt, fileName) {
   </xml>
   <![endif]-->
   <style>
-    body { font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.5; padding: 20pt; color: #000000; }
-    h1 { font-size: 20pt; color: #1f4e78; margin-bottom: 10pt; }
-    h2 { font-size: 14pt; color: #2e75b6; margin-top: 12pt; margin-bottom: 6pt; }
-    p { margin-bottom: 8pt; }
+    body { font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.6; padding: 24pt; color: #1e1035; }
+    h1 { font-size: 18pt; color: #7c3aed; margin-bottom: 12pt; border-bottom: 2px solid #e9d5ff; padding-bottom: 6pt; }
+    p { margin-bottom: 10pt; line-height: 1.6; }
   </style>
 </head>
 <body>
+  <h1>${escapeHtml(fileName.replace(/\.[^/.]+$/, ''))}</h1>
   ${bodyContent}
 </body>
 </html>`;
 }
 
-function formatToHTML(text, sourceExt) {
-  if (sourceExt === 'html') return text;
-  
-  let bodyContent = text;
-  if (sourceExt === 'md') {
-    bodyContent = text
-      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/\n\n/g, '</p><p>')
-      .replace(/\n/g, '<br/>');
-    bodyContent = `<p>${bodyContent}</p>`;
-  } else {
-    bodyContent = `<p>${text.replace(/\n/g, '<br/>')}</p>`;
-  }
+function formatToHTML(text, sourceExt, fileName) {
+  const paragraphs = text.split('\n').map(p => p.trim()).filter(Boolean);
+  const bodyContent = paragraphs.map(p => `<p>${escapeHtml(p)}</p>`).join('\n');
 
   return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Converted Document</title>
+  <title>${escapeHtml(fileName)}</title>
   <style>
-    body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; padding: 2rem; color: #121212; }
-    h1, h2, h3 { color: #007acc; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; padding: 2.5rem; max-width: 800px; margin: 0 auto; color: #1e1035; background-color: #faf5ff; }
+    h1 { color: #7c3aed; border-bottom: 2px solid #e9d5ff; padding-bottom: 0.5rem; }
+    p { margin-bottom: 1rem; color: #2e1065; }
   </style>
 </head>
 <body>
+  <h1>${escapeHtml(fileName.replace(/\.[^/.]+$/, ''))}</h1>
   ${bodyContent}
 </body>
 </html>`;
 }
 
-function formatToMarkdown(text, sourceExt) {
-  if (sourceExt === 'md') return text;
+function formatToMarkdown(text) {
+  const paragraphs = text.split('\n').map(p => p.trim()).filter(Boolean);
+  return paragraphs.join('\n\n');
+}
 
-  let md = text;
-  if (sourceExt === 'html') {
-    md = text
-      .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n')
-      .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n')
-      .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n')
-      .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
-      .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
-      .replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n')
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<[^>]*>/g, '');
-  }
-  return md;
+function formatToRtf(text) {
+  const clean = text
+    .replace(/\\/g, '\\\\')
+    .replace(/\{/g, '\\{')
+    .replace(/\}/g, '\\}')
+    .replace(/\n/g, '\\par\n');
+
+  return `{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Segoe UI;}}\\f0\\fs24 ${clean}}`;
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }

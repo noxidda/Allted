@@ -57,6 +57,8 @@ async function extractDocumentText(file, sourceExt) {
     } else if (sourceExt === 'epub') {
       const epubText = await extractTextFromEpub(arrayBuffer);
       if (epubText && epubText.trim().length > 0) return epubText;
+    } else if (sourceExt === 'doc') {
+      return parseLegacyDocToText(arrayBuffer, file.name);
     } else if (sourceExt === 'rtf') {
       const rawRtf = new TextDecoder('utf-8').decode(arrayBuffer);
       return parseRtfToText(rawRtf);
@@ -73,11 +75,39 @@ async function extractDocumentText(file, sourceExt) {
       return stripBinaryJunk(text);
     }
 
-    return `Extracted Document Text from ${file.name}`;
+    return parseLegacyDocToText(arrayBuffer, file.name);
   } catch (err) {
     console.warn('Text extraction error:', err);
-    return `Content of ${file.name}`;
+    return `Document Content from ${file.name}`;
   }
+}
+
+function parseLegacyDocToText(arrayBuffer, fileName) {
+  try {
+    // 1. Try UTF-16LE decoding (standard for OLE2 binary .doc files)
+    const utf16Str = new TextDecoder('utf-16le', { fatal: false }).decode(arrayBuffer);
+    const utf16Words = utf16Str.match(/[\x20-\x7E]{4,}/g);
+    if (utf16Words) {
+      const cleanUtf16 = utf16Words.filter(
+        w => !w.includes('Root Entry') && !w.includes('WordDocument') && !w.includes('CompObj') && !w.includes('ObjectPool') && w.trim().length > 3
+      );
+      if (cleanUtf16.length > 0) return cleanUtf16.join('\n');
+    }
+
+    // 2. Try UTF-8 / ASCII decoding
+    const utf8Str = new TextDecoder('utf-8', { fatal: false }).decode(arrayBuffer);
+    const utf8Words = utf8Str.match(/[\x20-\x7E]{4,}/g);
+    if (utf8Words) {
+      const cleanUtf8 = utf8Words.filter(
+        w => !w.includes('Root Entry') && !w.includes('WordDocument') && !w.includes('CompObj') && !w.includes('ObjectPool') && w.trim().length > 3
+      );
+      if (cleanUtf8.length > 0) return cleanUtf8.join('\n');
+    }
+  } catch (e) {
+    console.warn('parseLegacyDocToText error:', e);
+  }
+
+  return `Extracted Document Content from ${fileName}`;
 }
 
 function parseRtfToText(rtfStr) {

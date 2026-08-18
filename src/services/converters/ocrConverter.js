@@ -1,6 +1,7 @@
+import { createPdfFromText } from '../../utils/pdfGenerator';
+
 export async function convertOcr(file, targetExt) {
   const cleanTarget = targetExt.toLowerCase();
-
   const extractedText = await performLocalOcrExtraction(file);
 
   let outputBlob;
@@ -9,13 +10,18 @@ export async function convertOcr(file, targetExt) {
   if (cleanTarget === 'txt') {
     outputBlob = new Blob([extractedText], { type: 'text/plain;charset=utf-8' });
     mimeType = 'text/plain';
-  } else if (cleanTarget === 'docx') {
-    const htmlContent = `<!DOCTYPE html><html><body><h1>OCR Extracted Document</h1><p>${extractedText.replace(/\n/g, '<br/>')}</p></body></html>`;
+  } else if (cleanTarget === 'docx' || cleanTarget === 'doc') {
+    const htmlContent = `<html xmlns:o='urn:schemas-microsoft-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head><meta charset='utf-8'><title>OCR Extracted Document</title></head>
+<body><h1>OCR Extracted Content</h1><p>${extractedText.replace(/\n/g, '<br/>')}</p></body>
+</html>`;
     outputBlob = new Blob([htmlContent], { type: 'application/msword;charset=utf-8' });
-    mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-  } else {
-    outputBlob = new Blob([extractedText], { type: 'application/pdf' });
+    mimeType = 'application/msword';
+  } else if (cleanTarget === 'pdf') {
+    outputBlob = createPdfFromText(file.name, extractedText);
     mimeType = 'application/pdf';
+  } else {
+    outputBlob = new Blob([extractedText], { type: 'text/plain;charset=utf-8' });
   }
 
   const baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;

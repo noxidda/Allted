@@ -66,7 +66,7 @@ export const App = () => {
   };
 
   return (
-    <div className="min-h-screen w-screen flex flex-col bg-[#000000] text-[#ffffff] font-sans overflow-x-hidden lg:overflow-hidden select-none">
+    <div className="min-h-screen w-screen flex flex-col bg-gradient-to-br from-[#F5F0FF] via-[#FAFAFF] to-[#F3E8FF] text-[#1E1035] font-sans overflow-x-hidden lg:overflow-hidden select-none">
       {/* Main Workspace */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
         {/* Left Section Sidebar */}
@@ -76,7 +76,7 @@ export const App = () => {
         />
 
         {/* Central & Right Split Workspace Pane */}
-        <main className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden p-2 sm:p-4 gap-3 sm:gap-4 bg-[#0d0d0d]">
+        <main className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden p-2 sm:p-4 gap-3 sm:gap-4 bg-[#FAF5FF]/60">
           {/* Left 75% Space Single File Converter Workspace */}
           <div className="w-full lg:w-[75%] h-auto lg:h-full shrink-0 overflow-visible lg:overflow-hidden">
             <DropzoneArea

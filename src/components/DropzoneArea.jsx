@@ -189,7 +189,7 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
   return (
     <div className="panel-3d w-full h-full p-3 sm:p-5 rounded-2xl flex flex-col justify-between shrink-0 select-none overflow-hidden font-normal">
       {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-[#F3E8FF] text-xs font-semibold uppercase tracking-wider text-[#6D28D9] shrink-0">
+      <div className="flex items-center justify-between pb-3 border-b border-[#F3E8FF] dark:border-[#2E2245] text-xs font-semibold uppercase tracking-wider text-[#6D28D9] dark:text-[#C084FC] shrink-0">
         <span>CONVERT FILE</span>
       </div>
 
@@ -201,7 +201,7 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`bg-[#FAF5FF] border-2 border-dashed ${isDragging ? 'border-[#7C3AED] bg-[#F3E8FF]' : 'border-[#C084FC]/60 hover:border-[#7C3AED]'} min-h-[220px] sm:min-h-0 h-full flex flex-col items-center justify-center p-4 sm:p-8 text-center cursor-pointer rounded-2xl transition-all duration-200`}
+            className={`bg-[#FAF5FF] dark:bg-[#110D1D] border-2 border-dashed ${isDragging ? 'border-[#7C3AED] bg-[#F3E8FF] dark:bg-[#1E1733]' : 'border-[#C084FC]/60 dark:border-[#3B2A57] hover:border-[#7C3AED] dark:hover:border-[#A855F7]'} min-h-[220px] sm:min-h-0 h-full flex flex-col items-center justify-center p-4 sm:p-8 text-center cursor-pointer rounded-2xl transition-all duration-200`}
           >
             <input 
               ref={fileInputRef}
@@ -211,35 +211,35 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
               className="hidden" 
             />
 
-            <div className="w-14 h-14 rounded-2xl bg-white shadow-md shadow-purple-100 border border-[#E9D5FF] flex items-center justify-center mb-3">
-              <svg className="w-7 h-7 text-[#7C3AED]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-14 h-14 rounded-2xl bg-white dark:bg-[#181326] shadow-md shadow-purple-100 dark:shadow-none border border-[#E9D5FF] dark:border-[#2E2245] flex items-center justify-center mb-3">
+              <svg className="w-7 h-7 text-[#7C3AED] dark:text-[#C084FC]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
             </div>
 
-            <h2 className="text-base sm:text-lg font-bold text-[#2E1065] mb-1 tracking-tight">
+            <h2 className="text-base sm:text-lg font-bold text-[#2E1065] dark:text-[#F3E8FF] mb-1 tracking-tight">
               Select or Drop File to Convert
             </h2>
-            <p className="text-xs text-[#6B5B95] mb-5 max-w-sm">
+            <p className="text-xs text-[#6B5B95] dark:text-[#A799CC] mb-5 max-w-sm">
               Convert your photos, videos, documents & data 100% offline.
             </p>
 
-            <button className="btn-3d-primary text-xs px-6 py-2.5 font-medium shadow-lg shadow-purple-200">
+            <button className="btn-3d-primary text-xs px-6 py-2.5 font-medium shadow-lg shadow-purple-200 dark:shadow-none">
               CHOOSE FILE
             </button>
           </div>
         ) : (
           <div className="h-full flex flex-col justify-between space-y-3 overflow-y-auto pr-1">
             {/* Selected File Details */}
-            <div className="flex items-center justify-between p-3 bg-[#FAF5FF] border border-[#E9D5FF] rounded-xl shrink-0 gap-2">
+            <div className="flex items-center justify-between p-3 bg-[#FAF5FF] dark:bg-[#110D1D] border border-[#E9D5FF] dark:border-[#2E2245] rounded-xl shrink-0 gap-2">
               <div className="min-w-0 flex-1 pr-1">
-                <h3 className="text-xs font-semibold text-[#2E1065] truncate max-w-full">
+                <h3 className="text-xs font-semibold text-[#2E1065] dark:text-[#F3E8FF] truncate max-w-full">
                   {selectedFile.name}
                 </h3>
-                <p className="text-[10px] sm:text-[11px] text-[#6B5B95] mt-0.5 font-medium truncate">
+                <p className="text-[10px] sm:text-[11px] text-[#6B5B95] dark:text-[#A799CC] mt-0.5 font-medium truncate">
                   {(selectedFile.size / 1024).toFixed(1)} KB • {sourceExt.toUpperCase()}
                   {nativeDimensions.width > 0 && (
-                    <span className="text-[#7C3AED] ml-1.5 font-semibold">({nativeDimensions.width}x{nativeDimensions.height})</span>
+                    <span className="text-[#7C3AED] dark:text-[#C084FC] ml-1.5 font-semibold">({nativeDimensions.width}x{nativeDimensions.height})</span>
                   )}
                 </p>
               </div>
@@ -256,11 +256,11 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
             {/* Target Format Selector */}
             {!convertedResult && (
               <div className="flex-1 flex flex-col min-h-0">
-                <label className="block text-[11px] font-semibold text-[#6D28D9] uppercase mb-1.5 tracking-wider shrink-0">
+                <label className="block text-[11px] font-semibold text-[#6D28D9] dark:text-[#C084FC] uppercase mb-1.5 tracking-wider shrink-0">
                   SELECT TARGET FORMAT
                 </label>
 
-                <div className="flex-1 overflow-y-auto p-3 bg-[#FAF5FF] border border-[#E9D5FF] rounded-xl flex flex-wrap gap-1.5 sm:gap-2 content-start min-h-[90px] max-h-[160px] sm:max-h-none">
+                <div className="flex-1 overflow-y-auto p-3 bg-[#FAF5FF] dark:bg-[#110D1D] border border-[#E9D5FF] dark:border-[#2E2245] rounded-xl flex flex-wrap gap-1.5 sm:gap-2 content-start min-h-[90px] max-h-[160px] sm:max-h-none">
                   {availableTargets.map((ext) => {
                     const info = FORMAT_OPTIONS[ext];
                     const isSelected = targetFormat === ext;
@@ -282,8 +282,8 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
 
             {/* Video Resolution Presets */}
             {isVideoFile && !convertedResult && (
-              <div className="p-3 bg-[#FAF5FF] border border-[#E9D5FF] rounded-xl shrink-0 space-y-2 font-normal">
-                <div className="flex flex-wrap items-center justify-between text-[11px] text-[#6D28D9] font-semibold uppercase tracking-wider gap-1">
+              <div className="p-3 bg-[#FAF5FF] dark:bg-[#110D1D] border border-[#E9D5FF] dark:border-[#2E2245] rounded-xl shrink-0 space-y-2 font-normal">
+                <div className="flex flex-wrap items-center justify-between text-[11px] text-[#6D28D9] dark:text-[#C084FC] font-semibold uppercase tracking-wider gap-1">
                   <span>VIDEO RESOLUTION PRESETS</span>
                   <div className="flex flex-wrap gap-1 text-[10px]">
                     {VIDEO_PRESETS.map((p) => {
@@ -295,7 +295,7 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
                           className={`px-2 py-0.5 rounded font-medium transition-colors ${
                             isSelected
                               ? 'bg-[#7C3AED] text-white'
-                              : 'bg-white text-[#6D28D9] border border-[#DDD6FE] hover:bg-[#F3E8FF]'
+                              : 'bg-white dark:bg-[#231A38] text-[#6D28D9] dark:text-[#DDD6FE] border border-[#DDD6FE] dark:border-[#3B2A57] hover:bg-[#F3E8FF] dark:hover:bg-[#2E2245]'
                           }`}
                         >
                           {p.key}
@@ -307,7 +307,7 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
 
                 <div className="grid grid-cols-2 gap-2 sm:gap-3 items-end">
                   <div>
-                    <label className="block text-[10px] text-[#6B5B95] mb-1 font-medium">
+                    <label className="block text-[10px] text-[#6B5B95] dark:text-[#A799CC] mb-1 font-medium">
                       WIDTH (MAX {nativeDimensions.width || 7680} PX)
                     </label>
                     <input
@@ -316,12 +316,12 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
                       value={customWidth}
                       onChange={(e) => handleWidthChange(e.target.value)}
                       disabled={isConverting}
-                      className="w-full px-2.5 py-1 bg-white border border-[#DDD6FE] text-xs font-mono text-[#2E1065] rounded-md focus:outline-none focus:border-[#7C3AED] font-medium"
+                      className="w-full px-2.5 py-1 bg-white dark:bg-[#181326] border border-[#DDD6FE] dark:border-[#3B2A57] text-xs font-mono text-[#2E1065] dark:text-[#F3E8FF] rounded-md focus:outline-none focus:border-[#7C3AED] font-medium"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] text-[#6B5B95] mb-1 font-medium">
+                    <label className="block text-[10px] text-[#6B5B95] dark:text-[#A799CC] mb-1 font-medium">
                       HEIGHT (MAX {nativeDimensions.height || 4320} PX)
                     </label>
                     <input
@@ -330,29 +330,29 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
                       value={customHeight}
                       onChange={(e) => handleHeightChange(e.target.value)}
                       disabled={isConverting}
-                      className="w-full px-2.5 py-1 bg-white border border-[#DDD6FE] text-xs font-mono text-[#2E1065] rounded-md focus:outline-none focus:border-[#7C3AED] font-medium"
+                      className="w-full px-2.5 py-1 bg-white dark:bg-[#181326] border border-[#DDD6FE] dark:border-[#3B2A57] text-xs font-mono text-[#2E1065] dark:text-[#F3E8FF] rounded-md focus:outline-none focus:border-[#7C3AED] font-medium"
                     />
                   </div>
                 </div>
 
                 {/* Proportional Lock Control */}
-                <div className="pt-1 flex justify-between items-center text-[#2E1065] font-medium">
+                <div className="pt-1 flex justify-between items-center text-[#2E1065] dark:text-[#F3E8FF] font-medium">
                   <button
                     onClick={() => setLockAspect(!lockAspect)}
                     disabled={isConverting}
-                    className="flex items-center gap-2 text-xs text-[#6B5B95] hover:text-[#6D28D9] transition-colors"
+                    className="flex items-center gap-2 text-xs text-[#6B5B95] dark:text-[#A799CC] hover:text-[#6D28D9] dark:hover:text-[#C084FC] transition-colors"
                   >
                     <span className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] transition-colors ${
                       lockAspect
                         ? 'bg-[#7C3AED] text-white border-[#7C3AED]'
-                        : 'bg-white text-transparent border-[#DDD6FE]'
+                        : 'bg-white dark:bg-[#181326] text-transparent border-[#DDD6FE] dark:border-[#3B2A57]'
                     }`}>
                       ✓
                     </span>
                     <span>Proportional Lock</span>
                   </button>
 
-                  <span className="text-[10px] text-[#6B5B95] font-mono">
+                  <span className="text-[10px] text-[#6B5B95] dark:text-[#A799CC] font-mono">
                     MAX: {nativeDimensions.width}x{nativeDimensions.height}
                   </span>
                 </div>
@@ -361,10 +361,10 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
 
             {/* Image Quality Control Slider */}
             {isImageFile && !convertedResult && (
-              <div className="p-3 bg-[#FAF5FF] border border-[#E9D5FF] rounded-xl shrink-0 space-y-2.5 sm:space-y-3 font-normal">
-                <div className="flex items-center justify-between text-[11px] text-[#6D28D9] font-semibold uppercase tracking-wider">
+              <div className="p-3 bg-[#FAF5FF] dark:bg-[#110D1D] border border-[#E9D5FF] dark:border-[#2E2245] rounded-xl shrink-0 space-y-2.5 sm:space-y-3 font-normal">
+                <div className="flex items-center justify-between text-[11px] text-[#6D28D9] dark:text-[#C084FC] font-semibold uppercase tracking-wider">
                   <span>IMAGE QUALITY</span>
-                  <span className="text-xs font-mono font-bold text-[#7C3AED] bg-white px-2.5 py-0.5 rounded-md border border-[#DDD6FE] shadow-sm">
+                  <span className="text-xs font-mono font-bold text-[#7C3AED] dark:text-[#C084FC] bg-white dark:bg-[#181326] px-2.5 py-0.5 rounded-md border border-[#DDD6FE] dark:border-[#3B2A57] shadow-sm">
                     {imageQuality}%
                   </span>
                 </div>
@@ -377,34 +377,34 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
                     value={imageQuality}
                     onChange={(e) => setImageQuality(Number(e.target.value))}
                     disabled={isConverting}
-                    className="w-full h-2 bg-[#E9D5FF] rounded-lg appearance-none cursor-pointer accent-[#7C3AED]"
+                    className="w-full h-2 bg-[#E9D5FF] dark:bg-[#2A1F45] rounded-lg appearance-none cursor-pointer accent-[#7C3AED] dark:accent-[#A855F7]"
                   />
-                  <div className="flex justify-between text-[10px] text-[#6B5B95] font-medium">
+                  <div className="flex justify-between text-[10px] text-[#6B5B95] dark:text-[#A799CC] font-medium">
                     <button
                       onClick={() => setImageQuality(50)}
                       disabled={isConverting}
-                      className="hover:text-[#7C3AED] transition-colors"
+                      className="hover:text-[#7C3AED] dark:hover:text-[#C084FC] transition-colors"
                     >
                       50%
                     </button>
                     <button
                       onClick={() => setImageQuality(75)}
                       disabled={isConverting}
-                      className="hover:text-[#7C3AED] transition-colors"
+                      className="hover:text-[#7C3AED] dark:hover:text-[#C084FC] transition-colors"
                     >
                       75%
                     </button>
                     <button
                       onClick={() => setImageQuality(90)}
                       disabled={isConverting}
-                      className="hover:text-[#7C3AED] transition-colors font-bold text-[#7C3AED]"
+                      className="hover:text-[#7C3AED] dark:hover:text-[#C084FC] transition-colors font-bold text-[#7C3AED] dark:text-[#C084FC]"
                     >
                       90% (Recommended)
                     </button>
                     <button
                       onClick={() => setImageQuality(100)}
                       disabled={isConverting}
-                      className="hover:text-[#7C3AED] transition-colors"
+                      className="hover:text-[#7C3AED] dark:hover:text-[#C084FC] transition-colors"
                     >
                       100%
                     </button>
@@ -415,11 +415,11 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
 
             {/* Converting Progress State */}
             {isConverting && (
-              <div className="p-6 bg-[#FAF5FF] border border-[#E9D5FF] rounded-xl flex flex-col items-center justify-center space-y-3 my-auto font-normal">
-                <div className="text-xs font-bold text-[#7C3AED] uppercase tracking-wider">
+              <div className="p-6 bg-[#FAF5FF] dark:bg-[#110D1D] border border-[#E9D5FF] dark:border-[#2E2245] rounded-xl flex flex-col items-center justify-center space-y-3 my-auto font-normal">
+                <div className="text-xs font-bold text-[#7C3AED] dark:text-[#C084FC] uppercase tracking-wider">
                   CONVERTING FILE... {conversionProgress}%
                 </div>
-                <div className="w-full h-2.5 bg-[#E9D5FF] rounded-full overflow-hidden">
+                <div className="w-full h-2.5 bg-[#E9D5FF] dark:bg-[#2A1F45] rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-gradient-to-r from-[#7C3AED] to-[#9333EA] transition-all duration-150 rounded-full"
                     style={{ width: `${conversionProgress}%` }}
@@ -430,14 +430,14 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
 
             {/* Completed Result Actions */}
             {convertedResult && !isConverting && (
-              <div className="p-6 bg-[#FAF5FF] border border-[#E9D5FF] rounded-xl flex flex-col items-center justify-center space-y-3 sm:space-y-4 my-auto font-normal">
-                <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-lg">
+              <div className="p-6 bg-[#FAF5FF] dark:bg-[#110D1D] border border-[#E9D5FF] dark:border-[#2E2245] rounded-xl flex flex-col items-center justify-center space-y-3 sm:space-y-4 my-auto font-normal">
+                <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-lg border border-emerald-300 dark:border-emerald-700">
                   ✓
                 </div>
-                <div className="text-xs font-bold text-[#2E1065] uppercase tracking-wider">
+                <div className="text-xs font-bold text-[#2E1065] dark:text-[#F3E8FF] uppercase tracking-wider">
                   CONVERSION COMPLETED
                 </div>
-                <p className="text-xs text-[#6D28D9] font-mono text-center truncate max-w-full bg-white px-3 py-1 rounded-md border border-[#DDD6FE]">
+                <p className="text-xs text-[#6D28D9] dark:text-[#C084FC] font-mono text-center truncate max-w-full bg-white dark:bg-[#181326] px-3 py-1 rounded-md border border-[#DDD6FE] dark:border-[#3B2A57]">
                   {convertedResult.fileName}
                 </p>
 
@@ -450,7 +450,7 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
                   </button>
                   <button
                     onClick={handleDownloadResult}
-                    className="btn-3d-primary font-medium text-xs px-6 py-2 shadow-md shadow-purple-200"
+                    className="btn-3d-primary font-medium text-xs px-6 py-2 shadow-md shadow-purple-200 dark:shadow-none"
                   >
                     SAVE FILE
                   </button>
@@ -462,7 +462,7 @@ export const DropzoneArea = ({ onConvertFile, activeCategory, isConverting, conv
       </div>
 
       {/* Footer Action Trigger */}
-      <div className="pt-3 border-t border-[#F3E8FF] shrink-0 font-normal flex justify-start">
+      <div className="pt-3 border-t border-[#F3E8FF] dark:border-[#2E2245] shrink-0 font-normal flex justify-start">
         {!convertedResult ? (
           <button
             onClick={handleStartConversion}

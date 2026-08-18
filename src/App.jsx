@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SectionSidebar } from './components/SectionSidebar';
 import { DropzoneArea } from './components/DropzoneArea';
 import { HistoryPanel } from './components/HistoryPanel';
@@ -13,6 +13,26 @@ export const App = () => {
   const [conversionProgress, setConversionProgress] = useState(0);
   const [convertedResult, setConvertedResult] = useState(null);
   const [previewItem, setPreviewItem] = useState(null);
+
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('allted_theme_mode');
+    if (saved !== null) return saved === 'dark';
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('allted_theme_mode', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('allted_theme_mode', 'light');
+    }
+  }, [darkMode]);
+
+  const toggleDarkMode = () => {
+    setDarkMode(prev => !prev);
+  };
 
   const handleConvertFile = async (file, targetExt, options = {}) => {
     if (!file || isConverting) return;
@@ -66,17 +86,19 @@ export const App = () => {
   };
 
   return (
-    <div className="min-h-screen w-screen flex flex-col bg-gradient-to-br from-[#F5F0FF] via-[#FAFAFF] to-[#F3E8FF] text-[#1E1035] font-sans overflow-x-hidden lg:overflow-hidden select-none">
+    <div className="min-h-screen w-screen flex flex-col bg-gradient-to-br from-[#F5F0FF] via-[#FAFAFF] to-[#F3E8FF] dark:from-[#0D0B14] dark:via-[#120E1F] dark:to-[#18122B] text-[#1E1035] dark:text-[#F3E8FF] font-sans overflow-x-hidden lg:overflow-hidden select-none transition-colors duration-200">
       {/* Main Workspace */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
         {/* Left Section Sidebar */}
         <SectionSidebar
           activeCategory={activeCategory}
           onSelectCategory={(cat) => setActiveCategory(cat)}
+          darkMode={darkMode}
+          onToggleDarkMode={toggleDarkMode}
         />
 
         {/* Central & Right Split Workspace Pane */}
-        <main className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden p-2 sm:p-4 gap-3 sm:gap-4 bg-[#FAF5FF]/60">
+        <main className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden p-2 sm:p-4 gap-3 sm:gap-4 bg-[#FAF5FF]/60 dark:bg-[#0D0B14]/70">
           {/* Left 75% Space Single File Converter Workspace */}
           <div className="w-full lg:w-[75%] h-auto lg:h-full shrink-0 overflow-visible lg:overflow-hidden">
             <DropzoneArea
